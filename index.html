@@ -2,9 +2,22 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SolarShift - Dashboard Comparison</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SolarShift">
+    <meta name="theme-color" content="#0a0a0a">
+    <meta name="description" content="محاكي السيارات الشمسية - قارن بين البنزين والكهرباء وحول سيارتك">
+    <title>SolarShift - محاكي السيارات الشمسية</title>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        /* منع الاختيار والنسخ على شاشات اللمس */
+        body {
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -26,12 +39,10 @@
         <main class="main-content">
             <!-- شريط التحكم العلوي -->
             <div class="control-bar">
-                <button class="menu-btn">☰ MENU</button>
+                <button class="menu-btn" onclick="toggleInfo()">☰ MENU</button>
                 <div class="title-center">SOLARSHIFT</div>
                 <div class="controls">
-                    <button class="control-btn">◯</button>
-                    <button class="control-btn">◯</button>
-                    <button class="control-btn">●</button>
+                    <button class="control-btn" onclick="resetCar()">↻</button>
                 </div>
             </div>
 
@@ -39,22 +50,22 @@
             <div class="dashboard-grid">
                 <!-- جهة البنزين (الماضي) -->
                 <div class="dashboard-side gasoline-side">
-                    <h2 class="side-title">عالم البنزين (الماضي)</h2>
+                    <h2 class="side-title">البنزين</h2>
                     <div class="side-stats">
                         <div class="side-stat-item">
-                            <span class="label">استهلاك الوقود شهرياً:</span>
+                            <span class="label">الوقود شهرياً</span>
                             <span class="value" id="gas-monthly-fuel">255 L</span>
                         </div>
                         <div class="side-stat-item">
-                            <span class="label">التكلفة الشهرية:</span>
+                            <span class="label">التكلفة الشهرية</span>
                             <span class="value highlight-red" id="gas-monthly-cost">580 SAR</span>
                         </div>
                         <div class="side-stat-item">
-                            <span class="label">انبعاثات الكربون شهرياً:</span>
+                            <span class="label">الانبعاثات</span>
                             <span class="value" id="gas-monthly-carbon">7.5 Tons</span>
                         </div>
                         <div class="side-stat-item">
-                            <span class="label">كفاءة المحرك:</span>
+                            <span class="label">الكفاءة</span>
                             <span class="value">30%</span>
                         </div>
                     </div>
@@ -72,29 +83,29 @@
                         </div>
                     </div>
                     <div class="drop-zone" id="dropZone">
-                        <p class="drop-text">اسحب القطع هنا للتحويل</p>
+                        <p class="drop-text">اسحب أو انقر مرتين</p>
                     </div>
                     <div class="eco-status" id="ecoStatus">بيئة ملوثة</div>
                 </div>
 
                 <!-- جهة الكهرباء (المستقبل) -->
                 <div class="dashboard-side electric-side">
-                    <h2 class="side-title">عالم الكهرباء (المستقبل)</h2>
+                    <h2 class="side-title">الكهرباء</h2>
                     <div class="side-stats">
                         <div class="side-stat-item">
-                            <span class="label">سعة البطارية:</span>
+                            <span class="label">سعة البطارية</span>
                             <span class="value" id="elec-battery-cap">0 kWh</span>
                         </div>
                         <div class="side-stat-item">
-                            <span class="label">تكلفة الشحن الشهرية:</span>
+                            <span class="label">التكلفة الشهرية</span>
                             <span class="value highlight-green" id="elec-monthly-cost">0 SAR</span>
                         </div>
                         <div class="side-stat-item">
-                            <span class="label">المدى (Range):</span>
+                            <span class="label">المدى</span>
                             <span class="value" id="elec-range">0 KM</span>
                         </div>
                         <div class="side-stat-item">
-                            <span class="label">نسبة التلوث:</span>
+                            <span class="label">التلوث</span>
                             <span class="value" id="elec-pollution">100%</span>
                         </div>
                     </div>
@@ -116,12 +127,12 @@
                     <div class="part-card" draggable="true" data-part="solar">
                         <img src="images/solar-panel.png" alt="Solar Panel" class="part-image">
                         <div class="part-name">ألواح شمسية</div>
-                        <div class="part-desc">طاقة مجانية من الشمس</div>
+                        <div class="part-desc">طاقة من الشمس</div>
                     </div>
                     <div class="part-card" draggable="true" data-part="motor">
                         <img src="images/motor.jpg" alt="Motor" class="part-image">
                         <div class="part-name">محرك كهربائي</div>
-                        <div class="part-desc">كفاءة 90% وهدوء تام</div>
+                        <div class="part-desc">كفاءة 90% وهدوء</div>
                     </div>
                 </div>
             </div>
@@ -131,7 +142,7 @@
 
             <!-- منطقة القطع المستبدلة -->
             <div class="replaced-parts-section">
-                <h3 class="section-title">القطع المستبدلة (المخلفات)</h3>
+                <h3 class="section-title">القطع المستبدلة</h3>
                 <div class="replaced-parts-container" id="replacedPartsContainer">
                     <div class="empty-state">
                         <p class="empty-text">لم تستبدل أي قطع حتى الآن</p>
@@ -147,17 +158,16 @@
                 <h3 class="section-title">إحصائيات التوفير والتحسن</h3>
                 <div class="comparison-grid">
                     <div class="comparison-box">
-                        <div class="comparison-label">التوفير المالي السنوي</div>
+                        <div class="comparison-label">التوفير السنوي</div>
                         <div class="comparison-value" id="annualSaving">0</div>
                         <div class="comparison-unit">SAR</div>
                     </div>
-                    <div class="comparison-arrow">→</div>
                     <div class="comparison-box">
-                        <div class="comparison-label">نسبة خفض الانبعاثات</div>
+                        <div class="comparison-label">خفض الانبعاثات</div>
                         <div class="comparison-value" id="reductionPercent">0%</div>
                     </div>
                     <div class="comparison-reduction">
-                        <div class="reduction-label">درجة نقاء الهواء</div>
+                        <div class="reduction-label">نقاء الهواء</div>
                         <div class="reduction-value" id="airPurity">0%</div>
                     </div>
                 </div>
@@ -173,7 +183,7 @@
         <!-- التذييل -->
         <footer class="footer">
             <div class="footer-content">
-                <p>© 2026 SolarShift - Solar Car Simulator</p>
+                <p>© 2026 SolarShift - محاكي السيارات الشمسية</p>
             </div>
         </footer>
     </div>

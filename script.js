@@ -1,5 +1,7 @@
 // ============================================
 // محاكي السيارات الشمسية - لوحة التحكم المتقدمة
+// محسّن لشاشات اللمس والأجهزة المحمولة
+// مع دعم النقر المزدوج لإضافة القطع
 // ============================================
 
 let carState = {
@@ -11,6 +13,14 @@ let carState = {
     carbonLevel: 100,
     replacedParts: []
 };
+
+// متغيرات السحب والإفلات على شاشات اللمس
+let touchDragData = null;
+let draggedElement = null;
+
+// متغيرات النقر المزدوج
+let lastClickTime = 0;
+let lastClickedPart = null;
 
 // البيانات المرجعية للبنزين (الحالة الأولية)
 const baseGasoline = {
@@ -47,23 +57,131 @@ const replacedPartsData = {
 };
 
 // ============================================
-// وظائف السحب والإفلات
+// وظائف السحب والإفلات - دعم الماوس واللمس
 // ============================================
 
+// دعم السحب والإفلات بالماوس (Desktop)
 document.querySelectorAll('.part-card').forEach(part => {
+    // حدث dragstart للماوس
     part.addEventListener('dragstart', (e) => {
+        e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/plain', part.dataset.part);
+        draggedElement = part;
+    });
+
+    part.addEventListener('dragend', () => {
+        draggedElement = null;
+    });
+
+    // حدث النقر المزدوج (Double Click)
+    part.addEventListener('dblclick', (e) => {
+        e.preventDefault();
+        const partType = part.dataset.part;
+        addPartToCar(partType);
+    });
+
+    // حدث النقر العادي (Single Click) - للتحقق من النقر المزدوج على الجوال
+    part.addEventListener('click', (e) => {
+        const currentTime = new Date().getTime();
+        const timeDiff = currentTime - lastClickTime;
+        
+        // إذا كانت النقرة الثانية على نفس العنصر خلال 300ms
+        if (timeDiff < 300 && lastClickedPart === part) {
+            e.preventDefault();
+            const partType = part.dataset.part;
+            addPartToCar(partType);
+            lastClickTime = 0; // إعادة تعيين
+        } else {
+            lastClickTime = currentTime;
+            lastClickedPart = part;
+        }
+    });
+
+    // دعم اللمس (Touch)
+    let tapCount = 0;
+    let tapTimer = null;
+
+    part.addEventListener('touchstart', (e) => {
+        touchDragData = part.dataset.part;
+        draggedElement = part;
+        part.style.opacity = '0.7';
+    });
+
+    part.addEventListener('touchend', (e) => {
+        if (draggedElement) {
+            draggedElement.style.opacity = '1';
+        }
+        draggedElement = null;
+
+        // دعم النقر المزدوج على اللمس (Double Tap)
+        tapCount++;
+        if (tapCount === 1) {
+            tapTimer = setTimeout(() => {
+                tapCount = 0;
+            }, 300);
+        } else if (tapCount === 2) {
+            clearTimeout(tapTimer);
+            e.preventDefault();
+            const partType = part.dataset.part;
+            addPartToCar(partType);
+            tapCount = 0;
+        }
     });
 });
 
+// منطقة الإفلات
 const dropZone = document.getElementById('dropZone');
-dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
-dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('drag-over'); });
+
+// دعم السحب والإفلات بالماوس
+dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    dropZone.classList.add('drag-over');
+});
+
+dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('drag-over');
+});
+
 dropZone.addEventListener('drop', (e) => {
     e.preventDefault();
     dropZone.classList.remove('drag-over');
     const partType = e.dataTransfer.getData('text/plain');
-    addPartToCar(partType);
+    if (partType) {
+        addPartToCar(partType);
+    }
+});
+
+// دعم اللمس (Touch)
+dropZone.addEventListener('touchover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('drag-over');
+});
+
+dropZone.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    const touch = e.touches[0];
+    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+    
+    if (element === dropZone || dropZone.contains(element)) {
+        dropZone.classList.add('drag-over');
+    } else {
+        dropZone.classList.remove('drag-over');
+    }
+});
+
+dropZone.addEventListener('touchleave', () => {
+    dropZone.classList.remove('drag-over');
+});
+
+dropZone.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    
+    if (touchDragData) {
+        addPartToCar(touchDragData);
+        touchDragData = null;
+    }
 });
 
 // ============================================
@@ -71,21 +189,20 @@ dropZone.addEventListener('drop', (e) => {
 // ============================================
 
 function addPartToCar(partType) {
-    if (carState.parts.includes(partType)) return;
-
+    // السماح بإضافة نفس القطعة مرات متعددة
     carState.parts.push(partType);
     
-    if (partType === 'battery') {
+    if (partType === 'battery' && !carState.hasBattery) {
         carState.hasBattery = true;
         carState.replacedParts.push('fuel_tank');
         playSound('sounds/battery-install.wav');
         showPartOnCar('battery');
-    } else if (partType === 'motor') {
+    } else if (partType === 'motor' && !carState.hasMotor) {
         carState.hasMotor = true;
         carState.replacedParts.push('gasoline_engine');
         playSound('sounds/motor-install.wav');
         showPartOnCar('motor');
-    } else if (partType === 'solar') {
+    } else if (partType === 'solar' && !carState.hasSolar) {
         carState.hasSolar = true;
         carState.replacedParts.push('exhaust_system');
         playSound('sounds/solar-install.wav');
@@ -214,7 +331,7 @@ function updateReplacedPartsUI() {
         const card = document.createElement('div');
         card.className = 'replaced-part-card';
         card.innerHTML = `
-            <img src="${data.image}" class="replaced-part-image">
+            <img src="${data.image}" class="replaced-part-image" alt="${data.name}">
             <div class="part-name">${data.name}</div>
             <div class="part-desc">${data.desc}</div>
         `;
@@ -241,7 +358,7 @@ function createCarbonParticles() {
         
         // موقع العادم (يسار الصورة خلف السيارة)
         const exhaustX = rect.left + (rect.width * 0.15); 
-        const exhaustY = rect.top + (rect.height * 0.75); 
+        const exhaustY = rect.top + (rect.height * 0.55); 
         
         particle.style.left = exhaustX + 'px';
         particle.style.top = exhaustY + 'px';
@@ -260,13 +377,27 @@ setInterval(createCarbonParticles, 200);
 // ============================================
 
 function playSound(path) {
-    const audio = new Audio(path);
-    audio.volume = 0.4;
-    audio.play().catch(() => {});
+    try {
+        const audio = new Audio(path);
+        audio.volume = 0.4;
+        audio.play().catch(() => {
+            // صامت إذا فشل التشغيل
+        });
+    } catch (e) {
+        // تجاهل الأخطاء
+    }
 }
 
 function resetCar() {
-    carState = { hasBattery: false, hasSolar: false, hasMotor: false, parts: [], isMoving: true, carbonLevel: 100, replacedParts: [] };
+    carState = { 
+        hasBattery: false, 
+        hasSolar: false, 
+        hasMotor: false, 
+        parts: [], 
+        isMoving: true, 
+        carbonLevel: 100, 
+        replacedParts: [] 
+    };
     
     const gasolineCar = document.getElementById('gasolineCar');
     const electricCar = document.getElementById('electricCar');
@@ -283,7 +414,34 @@ function resetCar() {
 }
 
 function toggleInfo() {
-    alert('محاكي التحول للكهرباء:\n\n1. قارن بين تكاليف البنزين والكهرباء شهرياً.\n2. اسحب القطع لتحويل السيارة.\n3. شاهد كيف تتحول البيئة من ملوثة إلى نقية.\n4. لاحظ التوفير المالي السنوي الضخم!');
+    const message = 'محاكي التحول للكهرباء:\n\n1. قارن بين تكاليف البنزين والكهرباء شهرياً.\n2. اسحب القطع أو انقر عليها مرتين لتحويل السيارة.\n3. شاهد كيف تتحول البيئة من ملوثة إلى نقية.\n4. لاحظ التوفير المالي السنوي الضخم!';
+    
+    // استخدام alert أو modal بسيط
+    if (typeof alert !== 'undefined') {
+        alert(message);
+    }
 }
 
-document.addEventListener('DOMContentLoaded', updateDashboard);
+// ============================================
+// تهيئة الصفحة
+// ============================================
+
+document.addEventListener('DOMContentLoaded', () => {
+    updateDashboard();
+    
+    // منع السلوكيات الافتراضية على شاشات اللمس
+    document.addEventListener('touchmove', (e) => {
+        // السماح بالتمرير الطبيعي
+    }, { passive: true });
+});
+
+// ============================================
+// دعم الاستجابة للتغييرات في حجم النافذة
+// ============================================
+
+window.addEventListener('resize', () => {
+    // إعادة حساب مواضع القطع إذا لزم الأمر
+    if (carState.hasBattery || carState.hasMotor || carState.hasSolar) {
+        updateDashboard();
+    }
+});
