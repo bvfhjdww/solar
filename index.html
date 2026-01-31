@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SolarShift - Dashboard Comparison</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- الرأس -->
+        <header class="header">
+            <div class="header-top">
+                <div class="time">5:49</div>
+                <div class="status-icons">
+                    <span class="icon">●●</span>
+                </div>
+                <div class="signal">
+                    <span class="bars">▮▮▮</span>
+                    <span class="battery">4G 74</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- المحتوى الرئيسي -->
+        <main class="main-content">
+            <!-- شريط التحكم العلوي -->
+            <div class="control-bar">
+                <button class="menu-btn">☰ MENU</button>
+                <div class="title-center">SOLARSHIFT</div>
+                <div class="controls">
+                    <button class="control-btn">◯</button>
+                    <button class="control-btn">◯</button>
+                    <button class="control-btn">●</button>
+                </div>
+            </div>
+
+            <!-- منطقة العرض الرئيسية: لوحة المقارنة الجانبية -->
+            <div class="dashboard-grid">
+                <!-- جهة البنزين (الماضي) -->
+                <div class="dashboard-side gasoline-side">
+                    <h2 class="side-title">عالم البنزين (الماضي)</h2>
+                    <div class="side-stats">
+                        <div class="side-stat-item">
+                            <span class="label">استهلاك الوقود شهرياً:</span>
+                            <span class="value" id="gas-monthly-fuel">255 L</span>
+                        </div>
+                        <div class="side-stat-item">
+                            <span class="label">التكلفة الشهرية:</span>
+                            <span class="value highlight-red" id="gas-monthly-cost">580 SAR</span>
+                        </div>
+                        <div class="side-stat-item">
+                            <span class="label">انبعاثات الكربون شهرياً:</span>
+                            <span class="value" id="gas-monthly-carbon">7.5 Tons</span>
+                        </div>
+                        <div class="side-stat-item">
+                            <span class="label">كفاءة المحرك:</span>
+                            <span class="value">30%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- منطقة السيارة المركزية -->
+                <div class="car-display-center">
+                    <div class="car-container" id="carContainer">
+                        <img src="images/bmw-car.png" alt="BMW Car" class="car-image" id="gasolineCar">
+                        <img src="images/bmw-car-electric.png" alt="Electric Car" class="car-image" id="electricCar" style="display: none; opacity: 0;">
+                        <div class="car-parts-overlay">
+                            <img src="images/solar-panels-roof.png" class="installed-part solar-roof" id="solarRoof" style="display: none;" alt="Solar Panels">
+                            <img src="images/battery-pack.png" class="installed-part battery-pack" id="batteryPack" style="display: none;" alt="Battery Pack">
+                            <img src="images/electric-motor.png" class="installed-part electric-motor" id="electricMotor" style="display: none;" alt="Electric Motor">
+                        </div>
+                    </div>
+                    <div class="drop-zone" id="dropZone">
+                        <p class="drop-text">اسحب القطع هنا للتحويل</p>
+                    </div>
+                    <div class="eco-status" id="ecoStatus">بيئة ملوثة</div>
+                </div>
+
+                <!-- جهة الكهرباء (المستقبل) -->
+                <div class="dashboard-side electric-side">
+                    <h2 class="side-title">عالم الكهرباء (المستقبل)</h2>
+                    <div class="side-stats">
+                        <div class="side-stat-item">
+                            <span class="label">سعة البطارية:</span>
+                            <span class="value" id="elec-battery-cap">0 kWh</span>
+                        </div>
+                        <div class="side-stat-item">
+                            <span class="label">تكلفة الشحن الشهرية:</span>
+                            <span class="value highlight-green" id="elec-monthly-cost">0 SAR</span>
+                        </div>
+                        <div class="side-stat-item">
+                            <span class="label">المدى (Range):</span>
+                            <span class="value" id="elec-range">0 KM</span>
+                        </div>
+                        <div class="side-stat-item">
+                            <span class="label">نسبة التلوث:</span>
+                            <span class="value" id="elec-pollution">100%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- الخط الفاصل -->
+            <div class="divider"></div>
+
+            <!-- منطقة القطع المتاحة -->
+            <div class="parts-section">
+                <h3 class="section-title">قطع التحويل المتاحة</h3>
+                <div class="parts-grid">
+                    <div class="part-card" draggable="true" data-part="battery">
+                        <img src="images/battery.jpg" alt="Battery" class="part-image">
+                        <div class="part-name">بطارية ليثيوم</div>
+                        <div class="part-desc">تخزين طاقة عالي</div>
+                    </div>
+                    <div class="part-card" draggable="true" data-part="solar">
+                        <img src="images/solar-panel.png" alt="Solar Panel" class="part-image">
+                        <div class="part-name">ألواح شمسية</div>
+                        <div class="part-desc">طاقة مجانية من الشمس</div>
+                    </div>
+                    <div class="part-card" draggable="true" data-part="motor">
+                        <img src="images/motor.jpg" alt="Motor" class="part-image">
+                        <div class="part-name">محرك كهربائي</div>
+                        <div class="part-desc">كفاءة 90% وهدوء تام</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- الخط الفاصل -->
+            <div class="divider"></div>
+
+            <!-- منطقة القطع المستبدلة -->
+            <div class="replaced-parts-section">
+                <h3 class="section-title">القطع المستبدلة (المخلفات)</h3>
+                <div class="replaced-parts-container" id="replacedPartsContainer">
+                    <div class="empty-state">
+                        <p class="empty-text">لم تستبدل أي قطع حتى الآن</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- الخط الفاصل -->
+            <div class="divider"></div>
+
+            <!-- لوحة التوفير والتحسن البيئي -->
+            <div class="comparison-section">
+                <h3 class="section-title">إحصائيات التوفير والتحسن</h3>
+                <div class="comparison-grid">
+                    <div class="comparison-box">
+                        <div class="comparison-label">التوفير المالي السنوي</div>
+                        <div class="comparison-value" id="annualSaving">0</div>
+                        <div class="comparison-unit">SAR</div>
+                    </div>
+                    <div class="comparison-arrow">→</div>
+                    <div class="comparison-box">
+                        <div class="comparison-label">نسبة خفض الانبعاثات</div>
+                        <div class="comparison-value" id="reductionPercent">0%</div>
+                    </div>
+                    <div class="comparison-reduction">
+                        <div class="reduction-label">درجة نقاء الهواء</div>
+                        <div class="reduction-value" id="airPurity">0%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- الأزرار -->
+            <div class="action-buttons">
+                <button class="btn btn-primary" onclick="resetCar()">إعادة تعيين</button>
+                <button class="btn btn-secondary" onclick="toggleInfo()">معلومات</button>
+            </div>
+        </main>
+
+        <!-- التذييل -->
+        <footer class="footer">
+            <div class="footer-content">
+                <p>© 2026 SolarShift - Solar Car Simulator</p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SolarShift - Solar Car Simulator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- الرأس -->
+        <header class="header">
+            <div class="header-top">
+                <div class="time">5:49</div>
+                <div class="status-icons">
+                    <span class="icon">●●</span>
+                </div>
+                <div class="signal">
+                    <span class="bars">▮▮▮</span>
+                    <span class="battery">4G 74</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- المحتوى الرئيسي -->
+        <main class="main-content">
+            <!-- شريط التحكم العلوي -->
+            <div class="control-bar">
+                <button class="menu-btn">☰ MENU</button>
+                <div class="title-center">SOLARSHIFT</div>
+                <div class="controls">
+                    <button class="control-btn">◯</button>
+                    <button class="control-btn">◯</button>
+                    <button class="control-btn">●</button>
+                </div>
+            </div>
+
+            <!-- منطقة العرض الرئيسية -->
+            <div class="display-area">
+                <!-- الإحصائيات اليسرى -->
+                <div class="stats-left">
+                    <div class="stat-item">
+                        <div class="stat-value" id="efficiency">0-100</div>
+                        <div class="stat-label">KM/H</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="range">500</div>
+                        <div class="stat-label">RANGE</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="power">+10 K</div>
+                        <div class="stat-label">POWER</div>
+                    </div>
+                </div>
+
+                <!-- الصورة/السيارة في المنتصف -->
+                <div class="car-display">
+                    <div class="car-container" id="carContainer">
+                        <img src="images/bmw-car.png" alt="BMW Car" class="car-image">
+                    </div>
+                    <div class="drop-zone" id="dropZone">
+                        <p class="drop-text">اسحب القطع هنا</p>
+                    </div>
+                </div>
+
+                <!-- المعلومات اليمنى -->
+                <div class="info-right">
+                    <div class="info-item">
+                        <div class="info-label">نوع السيارة</div>
+                        <div class="info-value" id="carType">GASOLINE</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">الانبعاثات</div>
+                        <div class="info-value" id="emissions">250 g/km</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">الكفاءة</div>
+                        <div class="info-value" id="carEfficiency">30%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- الخط الفاصل -->
+            <div class="divider"></div>
+
+            <!-- منطقة القطع المتاحة -->
+            <div class="parts-section">
+                <h3 class="section-title">AVAILABLE PARTS</h3>
+                <div class="parts-grid">
+                    <div class="part-card" draggable="true" data-part="battery">
+                        <img src="images/battery.jpg" alt="Battery" class="part-image">
+                        <div class="part-name">BATTERY</div>
+                        <div class="part-desc">بطارية قوية</div>
+                    </div>
+                    <div class="part-card" draggable="true" data-part="solar">
+                        <img src="images/solar-panel.png" alt="Solar Panel" class="part-image">
+                        <div class="part-name">SOLAR PANEL</div>
+                        <div class="part-desc">لوح شمسي</div>
+                    </div>
+                    <div class="part-card" draggable="true" data-part="motor">
+                        <img src="images/motor.jpg" alt="Motor" class="part-image">
+                        <div class="part-name">MOTOR</div>
+                        <div class="part-desc">محرك كهربائي</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- الخط الفاصل -->
+            <div class="divider"></div>
+
+            <!-- منطقة القطع المستبدلة (الجديدة) -->
+            <div class="replaced-parts-section">
+                <h3 class="section-title">REPLACED PARTS</h3>
+                <div class="replaced-parts-container" id="replacedPartsContainer">
+                    <div class="empty-state">
+                        <p class="empty-text">لم تستبدل أي قطع حتى الآن</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- الخط الفاصل -->
+            <div class="divider"></div>
+
+            <!-- لوحة المقارنة (الجديدة) -->
+            <div class="comparison-section">
+                <h3 class="section-title">ENVIRONMENTAL IMPACT</h3>
+                <div class="comparison-grid">
+                    <div class="comparison-box">
+                        <div class="comparison-label">الحالة الأولية</div>
+                        <div class="comparison-value" id="initialEmissions">250</div>
+                        <div class="comparison-unit">g/km CO₂</div>
+                    </div>
+                    <div class="comparison-arrow">→</div>
+                    <div class="comparison-box">
+                        <div class="comparison-label">الحالة الحالية</div>
+                        <div class="comparison-value" id="currentEmissions">250</div>
+                        <div class="comparison-unit">g/km CO₂</div>
+                    </div>
+                    <div class="comparison-reduction">
+                        <div class="reduction-label">التحسن</div>
+                        <div class="reduction-value" id="reductionPercent">0%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- الخط الفاصل -->
+            <div class="divider"></div>
+
+            <!-- الإحصائيات التفصيلية -->
+            <div class="stats-section">
+                <h3 class="section-title">STATISTICS</h3>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-box-label">CO₂ Emissions</div>
+                        <div class="stat-box-value" id="emissionsValue">250</div>
+                        <div class="stat-box-unit">g/km</div>
+                        <div class="stat-bar">
+                            <div class="stat-bar-fill" id="emissionsBar" style="width: 100%"></div>
+                        </div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-box-label">Fuel Consumption</div>
+                        <div class="stat-box-value" id="consumptionValue">8.5</div>
+                        <div class="stat-box-unit">L/100km</div>
+                        <div class="stat-bar">
+                            <div class="stat-bar-fill" id="consumptionBar" style="width: 100%"></div>
+                        </div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-box-label">Efficiency</div>
+                        <div class="stat-box-value" id="efficiencyValue">30</div>
+                        <div class="stat-box-unit">%</div>
+                        <div class="stat-bar">
+                            <div class="stat-bar-fill" id="efficiencyValueBar" style="width: 30%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- الخط الفاصل -->
+            <div class="divider"></div>
+
+            <!-- الأزرار -->
+            <div class="action-buttons">
+                <button class="btn btn-primary" onclick="resetCar()">RESET</button>
+                <button class="btn btn-secondary" onclick="toggleInfo()">INFO</button>
+            </div>
+        </main>
+
+        <!-- التذييل -->
+        <footer class="footer">
+            <div class="footer-content">
+                <p>© 2026 SolarShift - Solar Car Simulator</p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
