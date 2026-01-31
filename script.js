@@ -1,6 +1,6 @@
 // ============================================
-// محاكي السيارات الشمسية - لوحة التحكم المتقدمة v2.1
-// محسّن لشاشات اللمس والأجهزة المحمولة
+// محاكي السيارات الشمسية - لوحة التحكم المتقدمة v2.2
+// النظام الصوتي والتفاعل المتقدم
 // ============================================
 
 let carState = {
@@ -20,6 +20,24 @@ let carState = {
     ecoEfficiency: 1.0,
     schedule: { start: '00:00', end: '06:00' }
 };
+
+// إعداد النظام الصوتي
+const sounds = {
+    battery: new Audio('sounds/battery-install.wav'),
+    motor: new Audio('sounds/motor-install.wav'),
+    solar: new Audio('sounds/solar-install.wav'),
+    powerOn: new Audio('sounds/motor-install.wav'), // استخدام صوت المحرك للتشغيل مؤقتاً
+    click: new Audio('sounds/battery-install.wav') // صوت نقرة خفيفة
+};
+
+// وظيفة تشغيل الصوت مع معالجة أخطاء المتصفح (Autoplay policy)
+function playSound(soundKey) {
+    const sound = sounds[soundKey];
+    if (sound) {
+        sound.currentTime = 0;
+        sound.play().catch(e => console.log('Audio play prevented: Need user interaction first'));
+    }
+}
 
 // البيانات المرجعية
 const baseGasoline = {
@@ -75,14 +93,17 @@ function addPartToCar(partType) {
         carState.hasBattery = true;
         carState.replacedParts.push('fuel_tank');
         showPartOnCar('battery');
+        playSound('battery');
     } else if (partType === 'motor' && !carState.hasMotor) {
         carState.hasMotor = true;
         carState.replacedParts.push('gasoline_engine');
         showPartOnCar('motor');
+        playSound('motor');
     } else if (partType === 'solar' && !carState.hasSolar) {
         carState.hasSolar = true;
         carState.replacedParts.push('exhaust_system');
         showPartOnCar('solar');
+        playSound('solar');
     }
     updateDashboard();
 }
@@ -195,8 +216,13 @@ function toggleCarPower() {
     const btn = document.getElementById('carPowerBtn');
     btn.textContent = carState.isPowerOn ? 'ON' : 'OFF';
     btn.classList.toggle('on', carState.isPowerOn);
-    if (carState.isPowerOn) startSpeedSimulation();
-    else stopSpeedSimulation();
+    
+    if (carState.isPowerOn) {
+        playSound('powerOn');
+        startSpeedSimulation();
+    } else {
+        stopSpeedSimulation();
+    }
 }
 
 let speedInterval;
@@ -221,20 +247,32 @@ function stopSpeedSimulation() {
 }
 
 function switchTab(tab) {
+    playSound('click');
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     event.currentTarget.classList.add('active');
     document.getElementById(tab + '-tab').classList.add('active');
 }
 
-function locateCar() { alert('موقع السيارة: الرياض، المملكة العربية السعودية'); }
+function locateCar() { 
+    playSound('click');
+    alert('موقع السيارة: الرياض، المملكة العربية السعودية'); 
+}
+
 function openChargingScheduler() { 
+    playSound('click');
     const m = document.getElementById('charging-scheduler');
     m.style.display = m.style.display === 'none' ? 'block' : 'none';
 }
-function saveSchedule() { alert('تم حفظ جدول الشحن'); document.getElementById('charging-scheduler').style.display = 'none'; }
+
+function saveSchedule() { 
+    playSound('click');
+    alert('تم حفظ جدول الشحن'); 
+    document.getElementById('charging-scheduler').style.display = 'none'; 
+}
 
 function setDriveMode(mode) {
+    playSound('click');
     carState.driveMode = mode;
     document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
     event.currentTarget.classList.add('active');
@@ -242,11 +280,19 @@ function setDriveMode(mode) {
 }
 
 function toggleEcoSave() {
+    playSound('click');
     carState.ecoSave = document.getElementById('eco-save-toggle').checked;
     carState.ecoEfficiency = carState.ecoSave ? 1.25 : 1.0;
     alert(carState.ecoSave ? 'تفعيل توفير الطاقة: زيادة المدى 25%' : 'إيقاف توفير الطاقة');
     updateDashboard();
 }
 
-function resetCar() { location.reload(); }
-function toggleMenu() { alert('SolarShift v2.1\nنظام إدارة الطاقة الذكي'); }
+function resetCar() { 
+    playSound('click');
+    location.reload(); 
+}
+
+function toggleMenu() { 
+    playSound('click');
+    alert('SolarShift v2.2\nنظام إدارة الطاقة الذكي'); 
+}
