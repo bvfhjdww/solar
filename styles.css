@@ -404,18 +404,38 @@ body {
 }
 
 .replaced-part-card {
-    background: rgba(255, 77, 77, 0.05);
-    border-color: rgba(255, 77, 77, 0.3);
-    opacity: 0.8;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 77, 77, 0.3);
+    border-radius: 10px;
+    padding: 1rem;
+    text-align: center;
+    opacity: 0.9;
     cursor: default;
+    transition: all 0.3s ease;
 }
 
-.part-image, .replaced-part-image {
+.replaced-part-image {
+    width: 100%;
+    height: 120px;
+    object-fit: contain; /* تغيير إلى contain لإظهار تفاصيل القطعة كاملة */
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    margin-bottom: 0.8rem;
+    filter: grayscale(0.8) contrast(1.2) sepia(0.3); /* تأثير القطع القديمة */
+    border: 1px dashed rgba(255, 77, 77, 0.4);
+    transition: all 0.3s ease;
+}
+
+.replaced-part-card:hover .replaced-part-image {
+    filter: grayscale(0.4) contrast(1.1);
+}
+
+.part-image {
     width: 100%;
     height: 100px;
     object-fit: cover;
     border-radius: 8px;
-    margin-bottom: 0.8rem;
+    margin-bottom: 0.5rem;
 }
 
 .part-name {
@@ -729,4 +749,246 @@ body {
         padding-right: max(1rem, env(safe-area-inset-right));
         padding-bottom: max(1rem, env(safe-area-inset-bottom));
     }
+}
+
+/* ============================================
+   تنسيقات لوحة التحكم والميزات الجديدة
+   ============================================ */
+
+.main-dashboard-panel {
+    background: linear-gradient(180deg, rgba(20, 20, 20, 0.9) 0%, rgba(10, 10, 10, 0.95) 100%);
+    margin: 1rem;
+    padding: 1.5rem;
+    border-radius: 20px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    z-index: 10;
+    position: relative;
+}
+
+.gauge-container {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.gauge-item {
+    text-align: center;
+}
+
+.gauge-value {
+    font-size: 2.5rem;
+    font-weight: 200;
+    color: var(--text-primary);
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+.main-charge .gauge-value {
+    color: #00ff88;
+    text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+}
+
+.gauge-label {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    margin-top: 0.2rem;
+    letter-spacing: 2px;
+}
+
+.stats-row {
+    display: flex;
+    justify-content: space-between;
+    border-top: 1px solid var(--border-color);
+    padding-top: 1rem;
+}
+
+.stat-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+}
+
+.stat-label {
+    font-size: 0.6rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    margin-bottom: 0.3rem;
+}
+
+.stat-value {
+    font-size: 1rem;
+    font-weight: 400;
+}
+
+/* التحكم عن بعد والتخصيص */
+.remote-custom-section {
+    margin: 1rem;
+    background: rgba(0, 0, 0, 0.6); /* خلفية داكنة لضمان الوضوح */
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.3);
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.tab-btn.active {
+    color: #00ff88;
+    background: transparent;
+    border-bottom: 2px solid #00ff88;
+}
+
+.section-tabs {
+    display: flex;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 1rem;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.tab-btn.active {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
+    border-bottom: 2px solid #00ff88;
+}
+
+.tab-content {
+    display: none;
+    padding: 1.5rem;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.remote-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.remote-card {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 1.5rem;
+    border-radius: 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.remote-label {
+    font-size: 0.8rem;
+    color: #ffffff;
+    font-weight: 500;
+}
+
+.remote-card:active {
+    transform: scale(0.95);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.remote-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.remote-label {
+    font-size: 0.8rem;
+}
+
+.custom-group {
+    margin-bottom: 1.5rem;
+}
+
+.group-title {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.8rem;
+    text-transform: uppercase;
+}
+
+.mode-selector {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.mode-btn {
+    flex: 1;
+    padding: 0.6rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: #ffffff;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.mode-btn.active {
+    background: #00ff88;
+    color: #000;
+    border-color: #00ff88;
+}
+
+.toggle-setting {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+}
+
+.scheduler-modal {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    border: 1px solid #00ff88;
+}
+
+.scheduler-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.scheduler-body input {
+    background: #222;
+    border: 1px solid #444;
+    color: white;
+    padding: 0.5rem;
+    border-radius: 5px;
+}
+
+#carPowerBtn {
+    font-weight: bold;
+    font-size: 0.7rem;
+    transition: all 0.3s ease;
+}
+
+#carPowerBtn.on {
+    background: #00ff88;
+    color: #000;
+    box-shadow: 0 0 10px #00ff88;
 }

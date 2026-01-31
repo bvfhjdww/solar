@@ -39,10 +39,35 @@
         <main class="main-content">
             <!-- شريط التحكم العلوي -->
             <div class="control-bar">
-                <button class="menu-btn" onclick="toggleInfo()">☰ MENU</button>
+                <button class="menu-btn" onclick="toggleMenu()">☰ MENU</button>
                 <div class="title-center">SOLARSHIFT</div>
                 <div class="controls">
+                    <button class="control-btn" id="carPowerBtn" onclick="toggleCarPower()">OFF</button>
                     <button class="control-btn" onclick="resetCar()">↻</button>
+                </div>
+            </div>
+
+            <!-- لوحة العدادات الرئيسية الجديدة -->
+            <div class="main-dashboard-panel">
+                <div class="gauge-container">
+                    <div class="gauge-item">
+                        <div class="gauge-value" id="main-speed">0</div>
+                        <div class="gauge-label">KM/H</div>
+                    </div>
+                    <div class="gauge-item main-charge">
+                        <div class="gauge-value" id="main-charge">0%</div>
+                        <div class="gauge-label">الشحن</div>
+                    </div>
+                </div>
+                <div class="stats-row">
+                    <div class="stat-box">
+                        <span class="stat-label">المدى المتبقي</span>
+                        <span class="stat-value" id="main-range">0 KM</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">إنتاج الشمس</span>
+                        <span class="stat-value" id="main-solar">0 W</span>
+                    </div>
                 </div>
             </div>
 
@@ -114,6 +139,58 @@
 
             <!-- الخط الفاصل -->
             <div class="divider"></div>
+
+            <!-- قسم التحكم عن بُعد والتخصيص -->
+            <div class="remote-custom-section">
+                <div class="section-tabs">
+                    <button class="tab-btn active" onclick="switchTab('remote')">تحكم عن بُعد</button>
+                    <button class="tab-btn" onclick="switchTab('custom')">تخصيص</button>
+                </div>
+
+                <!-- محتوى التحكم عن بُعد -->
+                <div id="remote-tab" class="tab-content active">
+                    <div class="remote-grid">
+                        <div class="remote-card" onclick="locateCar()">
+                            <div class="remote-icon">📍</div>
+                            <div class="remote-label">تحديد الموقع</div>
+                        </div>
+                        <div class="remote-card" onclick="openChargingScheduler()">
+                            <div class="remote-icon">⚡</div>
+                            <div class="remote-label">جدولة الشحن</div>
+                        </div>
+                    </div>
+                    <!-- نافذة جدولة الشحن -->
+                    <div id="charging-scheduler" class="scheduler-modal" style="display: none;">
+                        <h4>جدولة الشحن المثالية</h4>
+                        <div class="scheduler-body">
+                            <label>وقت البدء:</label>
+                            <input type="time" id="charge-start-time" value="00:00">
+                            <label>وقت الانتهاء:</label>
+                            <input type="time" id="charge-end-time" value="06:00">
+                            <button class="btn btn-primary" onclick="saveSchedule()">حفظ الجدول</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- محتوى التخصيص -->
+                <div id="custom-tab" class="tab-content">
+                    <div class="custom-group">
+                        <label class="group-title">وضع القيادة</label>
+                        <div class="mode-selector">
+                            <button class="mode-btn active" onclick="setDriveMode('eco')">اقتصادي</button>
+                            <button class="mode-btn" onclick="setDriveMode('normal')">عادي</button>
+                            <button class="mode-btn" onclick="setDriveMode('sport')">رياضي</button>
+                        </div>
+                    </div>
+                    <div class="custom-group">
+                        <label class="group-title">إعدادات الطاقة</label>
+                        <div class="toggle-setting">
+                            <span>توفير الطاقة التلقائي</span>
+                            <input type="checkbox" id="eco-save-toggle" onchange="toggleEcoSave()">
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <!-- منطقة القطع المتاحة -->
             <div class="parts-section">

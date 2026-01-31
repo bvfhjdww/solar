@@ -1,7 +1,6 @@
 // ============================================
-// محاكي السيارات الشمسية - لوحة التحكم المتقدمة
+// محاكي السيارات الشمسية - لوحة التحكم المتقدمة v2.1
 // محسّن لشاشات اللمس والأجهزة المحمولة
-// مع دعم النقر المزدوج لإضافة القطع
 // ============================================
 
 let carState = {
@@ -9,230 +8,92 @@ let carState = {
     hasSolar: false,
     hasMotor: false,
     parts: [],
-    isMoving: true,
+    isMoving: false,
+    isPowerOn: false,
     carbonLevel: 100,
-    replacedParts: []
+    replacedParts: [],
+    speed: 0,
+    charge: 74,
+    solarProduction: 0,
+    driveMode: 'eco',
+    ecoSave: false,
+    ecoEfficiency: 1.0,
+    schedule: { start: '00:00', end: '06:00' }
 };
 
-// متغيرات السحب والإفلات على شاشات اللمس
-let touchDragData = null;
-let draggedElement = null;
-
-// متغيرات النقر المزدوج
-let lastClickTime = 0;
-let lastClickedPart = null;
-
-// البيانات المرجعية للبنزين (الحالة الأولية)
+// البيانات المرجعية
 const baseGasoline = {
-    monthlyFuel: 255, // لتر
-    fuelPrice: 2.33, // ريال لكل لتر
-    monthlyCarbon: 7.5, // طن
-    pollution: 100 // %
+    monthlyFuel: 255,
+    fuelPrice: 2.33,
+    monthlyCarbon: 7.5,
+    pollution: 100
 };
 
-// البيانات المرجعية للقطع الكهربائية
 const electricPartsEffect = {
-    battery: {
-        capacity: 75, // kWh
-        range: 400, // KM
-        chargingCost: 45, // ريال شهرياً
-        pollutionReduction: 40 // %
-    },
-    motor: {
-        efficiencyBoost: 60, // %
-        pollutionReduction: 40 // %
-    },
-    solar: {
-        rangeBoost: 100, // KM
-        chargingCostReduction: 45, // ريال (يصبح مجاني)
-        pollutionReduction: 20 // %
-    }
+    battery: { capacity: 75, range: 400, chargingCost: 45, pollutionReduction: 40 },
+    motor: { efficiencyBoost: 60, pollutionReduction: 40 },
+    solar: { rangeBoost: 100, chargingCostReduction: 45, pollutionReduction: 20 }
 };
 
-// بيانات القطع المستبدلة
 const replacedPartsData = {
-    gasoline_engine: { name: 'محرك البنزين V6', desc: 'استهلاك عالي وانبعاثات سامة', image: 'images/motor.jpg' },
-    fuel_tank: { name: 'خزان وقود 70L', desc: 'خطر الاشتعال وتكلفة تعبئة عالية', image: 'images/battery.jpg' },
-    exhaust_system: { name: 'نظام العادم', desc: 'المصدر الرئيسي لثاني أكسيد الكربون', image: 'images/motor.jpg' }
+    gasoline_engine: { name: 'محرك البنزين V6', desc: 'تم استبداله بمحرك كهربائي صامت وعالي الكفاءة', image: 'images/gas_engine_replaced.png' },
+    fuel_tank: { name: 'خزان وقود 70L', desc: 'تم استبداله ببطارية ليثيوم متطورة وآمنة', image: 'images/fuel_tank_replaced.png' },
+    exhaust_system: { name: 'نظام العادم', desc: 'تمت إزالته بالكامل - صفر انبعاثات كربونية', image: 'images/exhaust_replaced.png' }
 };
 
-// ============================================
-// وظائف السحب والإفلات - دعم الماوس واللمس
-// ============================================
-
-// دعم السحب والإفلات بالماوس (Desktop)
+// وظائف السحب والإفلات والنقر
 document.querySelectorAll('.part-card').forEach(part => {
-    // حدث dragstart للماوس
     part.addEventListener('dragstart', (e) => {
-        e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/plain', part.dataset.part);
-        draggedElement = part;
     });
 
-    part.addEventListener('dragend', () => {
-        draggedElement = null;
-    });
+    part.addEventListener('dblclick', () => addPartToCar(part.dataset.part));
 
-    // حدث النقر المزدوج (Double Click)
-    part.addEventListener('dblclick', (e) => {
-        e.preventDefault();
-        const partType = part.dataset.part;
-        addPartToCar(partType);
-    });
-
-    // حدث النقر العادي (Single Click) - للتحقق من النقر المزدوج على الجوال
-    part.addEventListener('click', (e) => {
-        const currentTime = new Date().getTime();
-        const timeDiff = currentTime - lastClickTime;
-        
-        // إذا كانت النقرة الثانية على نفس العنصر خلال 300ms
-        if (timeDiff < 300 && lastClickedPart === part) {
-            e.preventDefault();
-            const partType = part.dataset.part;
-            addPartToCar(partType);
-            lastClickTime = 0; // إعادة تعيين
-        } else {
-            lastClickTime = currentTime;
-            lastClickedPart = part;
-        }
-    });
-
-    // دعم اللمس (Touch)
-    let tapCount = 0;
-    let tapTimer = null;
-
-    part.addEventListener('touchstart', (e) => {
-        touchDragData = part.dataset.part;
-        draggedElement = part;
-        part.style.opacity = '0.7';
-    });
-
+    // دعم اللمس والنقر المزدوج للجوال
+    let lastTap = 0;
     part.addEventListener('touchend', (e) => {
-        if (draggedElement) {
-            draggedElement.style.opacity = '1';
-        }
-        draggedElement = null;
-
-        // دعم النقر المزدوج على اللمس (Double Tap)
-        tapCount++;
-        if (tapCount === 1) {
-            tapTimer = setTimeout(() => {
-                tapCount = 0;
-            }, 300);
-        } else if (tapCount === 2) {
-            clearTimeout(tapTimer);
+        const currentTime = new Date().getTime();
+        const tapLength = currentTime - lastTap;
+        if (tapLength < 300 && tapLength > 0) {
+            addPartToCar(part.dataset.part);
             e.preventDefault();
-            const partType = part.dataset.part;
-            addPartToCar(partType);
-            tapCount = 0;
         }
+        lastTap = currentTime;
     });
 });
 
-// منطقة الإفلات
 const dropZone = document.getElementById('dropZone');
-
-// دعم السحب والإفلات بالماوس
-dropZone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    dropZone.classList.add('drag-over');
-});
-
-dropZone.addEventListener('dragleave', () => {
-    dropZone.classList.remove('drag-over');
-});
-
+dropZone.addEventListener('dragover', (e) => e.preventDefault());
 dropZone.addEventListener('drop', (e) => {
     e.preventDefault();
-    dropZone.classList.remove('drag-over');
     const partType = e.dataTransfer.getData('text/plain');
-    if (partType) {
-        addPartToCar(partType);
-    }
+    if (partType) addPartToCar(partType);
 });
-
-// دعم اللمس (Touch)
-dropZone.addEventListener('touchover', (e) => {
-    e.preventDefault();
-    dropZone.classList.add('drag-over');
-});
-
-dropZone.addEventListener('touchmove', (e) => {
-    e.preventDefault();
-    const touch = e.touches[0];
-    const element = document.elementFromPoint(touch.clientX, touch.clientY);
-    
-    if (element === dropZone || dropZone.contains(element)) {
-        dropZone.classList.add('drag-over');
-    } else {
-        dropZone.classList.remove('drag-over');
-    }
-});
-
-dropZone.addEventListener('touchleave', () => {
-    dropZone.classList.remove('drag-over');
-});
-
-dropZone.addEventListener('touchend', (e) => {
-    e.preventDefault();
-    dropZone.classList.remove('drag-over');
-    
-    if (touchDragData) {
-        addPartToCar(touchDragData);
-        touchDragData = null;
-    }
-});
-
-// ============================================
-// إضافة القطع وتحديث اللوحة
-// ============================================
 
 function addPartToCar(partType) {
-    // السماح بإضافة نفس القطعة مرات متعددة
-    carState.parts.push(partType);
-    
     if (partType === 'battery' && !carState.hasBattery) {
         carState.hasBattery = true;
         carState.replacedParts.push('fuel_tank');
-        playSound('sounds/battery-install.wav');
         showPartOnCar('battery');
     } else if (partType === 'motor' && !carState.hasMotor) {
         carState.hasMotor = true;
         carState.replacedParts.push('gasoline_engine');
-        playSound('sounds/motor-install.wav');
         showPartOnCar('motor');
     } else if (partType === 'solar' && !carState.hasSolar) {
         carState.hasSolar = true;
         carState.replacedParts.push('exhaust_system');
-        playSound('sounds/solar-install.wav');
         showPartOnCar('solar');
     }
-
     updateDashboard();
 }
 
 function showPartOnCar(partType) {
-    if (partType === 'battery') {
-        document.getElementById('batteryPack').style.display = 'block';
-    } else if (partType === 'motor') {
-        document.getElementById('electricMotor').style.display = 'block';
-    } else if (partType === 'solar') {
-        document.getElementById('solarRoof').style.display = 'block';
-    }
-}
-
-function hideAllParts() {
-    document.getElementById('batteryPack').style.display = 'none';
-    document.getElementById('electricMotor').style.display = 'none';
-    document.getElementById('solarRoof').style.display = 'none';
+    const el = { battery: 'batteryPack', motor: 'electricMotor', solar: 'solarRoof' }[partType];
+    if (el) document.getElementById(el).style.display = 'block';
 }
 
 function updateDashboard() {
-    // 1. حساب إحصائيات الكهرباء
-    let currentBattery = 0;
-    let currentRange = 0;
-    let currentChargingCost = 0;
+    let currentBattery = 0, currentRange = 0, currentChargingCost = 0;
     let currentPollution = baseGasoline.pollution;
     let currentMonthlyCost = baseGasoline.monthlyFuel * baseGasoline.fuelPrice;
 
@@ -243,205 +104,149 @@ function updateDashboard() {
         currentPollution -= electricPartsEffect.battery.pollutionReduction;
         currentMonthlyCost = currentChargingCost;
     }
-
     if (carState.hasMotor) {
         currentPollution -= electricPartsEffect.motor.pollutionReduction;
-        if (carState.hasBattery) currentRange += 50; // كفاءة المحرك تزيد المدى
+        if (carState.hasBattery) currentRange += 50;
     }
-
     if (carState.hasSolar) {
         currentPollution -= electricPartsEffect.solar.pollutionReduction;
         if (carState.hasBattery) {
             currentRange += electricPartsEffect.solar.rangeBoost;
-            currentChargingCost = 0; // الشحن يصبح مجاني
             currentMonthlyCost = 0;
         }
     }
 
-    // ضمان عدم نزول التلوث عن الصفر
-    currentPollution = Math.max(0, currentPollution);
-    carState.carbonLevel = currentPollution;
+    // تطبيق الأوضاع والخصائص
+    if (carState.driveMode === 'sport') currentRange *= 0.7;
+    else if (carState.driveMode === 'eco') currentRange *= 1.2;
+    currentRange *= carState.ecoEfficiency;
 
-    // 2. تحديث واجهة عالم الكهرباء
+    currentPollution = Math.max(0, currentPollution);
+    
+    // تحديث الواجهة
     document.getElementById('elec-battery-cap').textContent = currentBattery + ' kWh';
     document.getElementById('elec-monthly-cost').textContent = Math.round(currentMonthlyCost) + ' SAR';
-    document.getElementById('elec-range').textContent = currentRange + ' KM';
+    document.getElementById('elec-range').textContent = Math.round(currentRange) + ' KM';
     document.getElementById('elec-pollution').textContent = currentPollution + '%';
-
-    // 3. تحديث لوحة التوفير
-    const gasMonthlyCost = baseGasoline.monthlyFuel * baseGasoline.fuelPrice;
-    const monthlySaving = gasMonthlyCost - currentMonthlyCost;
-    const annualSaving = monthlySaving * 12;
-    const reductionPercent = 100 - currentPollution;
-    const airPurity = reductionPercent;
-
-    document.getElementById('annualSaving').textContent = Math.round(annualSaving).toLocaleString();
-    document.getElementById('reductionPercent').textContent = reductionPercent + '%';
-    document.getElementById('airPurity').textContent = airPurity + '%';
-
-    // 4. تحديث القطع المستبدلة
-    updateReplacedPartsUI();
-
-    // 5. تحديث البيئة والسيارة
-    const container = document.querySelector('.container');
-    const ecoStatus = document.getElementById('ecoStatus');
-    const gasolineCar = document.getElementById('gasolineCar');
-    const electricCar = document.getElementById('electricCar');
     
-    // تحديث لمعان السيارة بناءً على التلوث
-    if (currentPollution < 100) {
-        gasolineCar.classList.add('clean');
-    } else {
-        gasolineCar.classList.remove('clean');
-    }
+    document.getElementById('main-range').textContent = Math.round(currentRange) + ' KM';
+    document.getElementById('main-charge').textContent = carState.charge + '%';
+    document.getElementById('main-solar').textContent = (carState.hasSolar ? 150 : 0) + ' W';
 
-    // التبديل للنسخة الكهربائية الكاملة عند تركيب كل القطع
-    if (carState.hasBattery && carState.hasMotor && carState.hasSolar) {
-        gasolineCar.style.opacity = '0';
-        setTimeout(() => {
-            gasolineCar.style.display = 'none';
-            electricCar.style.display = 'block';
-            setTimeout(() => electricCar.style.opacity = '1', 50);
-            hideAllParts(); // إخفاء القطع المنفصلة لأنها أصبحت جزءاً من صورة السيارة الجديدة
-        }, 1000);
-        
-        container.classList.add('eco-mode');
-        ecoStatus.textContent = 'بيئة نظيفة ونقية - سيارة كهربائية بالكامل';
-    } else {
-        container.classList.add('eco-mode');
-        if (currentPollution <= 20) {
-            container.classList.add('eco-mode');
-            ecoStatus.textContent = 'بيئة نظيفة ونقية';
-        } else {
-            container.classList.remove('eco-mode');
-            ecoStatus.textContent = 'بيئة ملوثة';
-        }
-    }
+    const gasCost = baseGasoline.monthlyFuel * baseGasoline.fuelPrice;
+    document.getElementById('annualSaving').textContent = Math.round((gasCost - currentMonthlyCost) * 12).toLocaleString();
+    document.getElementById('reductionPercent').textContent = (100 - currentPollution) + '%';
+    document.getElementById('airPurity').textContent = (100 - currentPollution) + '%';
+
+    updateReplacedPartsUI();
+    updateEnvironment(currentPollution);
 }
 
 function updateReplacedPartsUI() {
     const container = document.getElementById('replacedPartsContainer');
+    if (!container) return;
     if (carState.replacedParts.length === 0) {
-        container.innerHTML = '<div class="empty-state"><p class="empty-text">لم تستبدل أي قطع حتى الآن</p></div>';
+        container.innerHTML = '<div class="empty-state"><p>لم تستبدل أي قطع حتى الآن</p></div>';
         return;
     }
     container.innerHTML = '';
     carState.replacedParts.forEach(key => {
-        const data = replacedPartsData[key];
+        const p = replacedPartsData[key];
         const card = document.createElement('div');
         card.className = 'replaced-part-card';
-        card.innerHTML = `
-            <img src="${data.image}" class="replaced-part-image" alt="${data.name}">
-            <div class="part-name">${data.name}</div>
-            <div class="part-desc">${data.desc}</div>
-        `;
+        card.innerHTML = `<img src="${p.image}" class="replaced-part-image"><div class="part-name">${p.name}</div><div class="part-desc">${p.desc}</div>`;
         container.appendChild(card);
     });
 }
 
-// ============================================
-// جزيئات الكربون (تتبع السيارة)
-// ============================================
+function updateEnvironment(pollution) {
+    const container = document.querySelector('.container');
+    const ecoStatus = document.getElementById('ecoStatus');
+    const gasCar = document.getElementById('gasolineCar');
+    const elecCar = document.getElementById('electricCar');
 
-function createCarbonParticles() {
-    if (carState.carbonLevel === 0) return;
-    const carImage = document.querySelector('.car-image');
-    if (!carImage) return;
-    const rect = carImage.getBoundingClientRect();
-    const particleCount = Math.ceil(carState.carbonLevel / 40);
+    if (pollution < 100) gasCar.classList.add('clean');
+    else gasCar.classList.remove('clean');
 
-    for (let i = 0; i < particleCount; i++) {
-        const particle = document.createElement('div');
-        particle.className = 'carbon-particle';
-        const dot = document.createElement('div');
-        dot.className = 'particle-dot';
-        
-        // موقع العادم (يسار الصورة خلف السيارة)
-        const exhaustX = rect.left + (rect.width * 0.15); 
-        const exhaustY = rect.top + (rect.height * 0.55); 
-        
-        particle.style.left = exhaustX + 'px';
-        particle.style.top = exhaustY + 'px';
-        dot.style.setProperty('--drift', ((Math.random() - 0.5) * 60) + 'px');
-        
-        particle.appendChild(dot);
-        document.body.appendChild(particle);
-        setTimeout(() => { if (particle.parentNode) particle.remove(); }, 4000);
+    if (carState.hasBattery && carState.hasMotor && carState.hasSolar) {
+        gasCar.style.opacity = '0';
+        setTimeout(() => {
+            gasCar.style.display = 'none';
+            elecCar.style.display = 'block';
+            setTimeout(() => elecCar.style.opacity = '1', 50);
+            document.getElementById('batteryPack').style.display = 'none';
+            document.getElementById('electricMotor').style.display = 'none';
+            document.getElementById('solarRoof').style.display = 'none';
+        }, 1000);
+        container.classList.add('eco-mode');
+        ecoStatus.textContent = 'بيئة نظيفة ونقية - سيارة كهربائية بالكامل';
+    } else if (pollution <= 20) {
+        container.classList.add('eco-mode');
+        ecoStatus.textContent = 'بيئة نظيفة ونقية';
+    } else {
+        container.classList.remove('eco-mode');
+        ecoStatus.textContent = pollution <= 60 ? 'بيئة تتحسن تدريجياً' : 'بيئة ملوثة';
     }
 }
 
-setInterval(createCarbonParticles, 200);
-
-// ============================================
-// وظائف إضافية
-// ============================================
-
-function playSound(path) {
-    try {
-        const audio = new Audio(path);
-        audio.volume = 0.4;
-        audio.play().catch(() => {
-            // صامت إذا فشل التشغيل
-        });
-    } catch (e) {
-        // تجاهل الأخطاء
-    }
+// وظائف التحكم
+function toggleCarPower() {
+    carState.isPowerOn = !carState.isPowerOn;
+    const btn = document.getElementById('carPowerBtn');
+    btn.textContent = carState.isPowerOn ? 'ON' : 'OFF';
+    btn.classList.toggle('on', carState.isPowerOn);
+    if (carState.isPowerOn) startSpeedSimulation();
+    else stopSpeedSimulation();
 }
 
-function resetCar() {
-    carState = { 
-        hasBattery: false, 
-        hasSolar: false, 
-        hasMotor: false, 
-        parts: [], 
-        isMoving: true, 
-        carbonLevel: 100, 
-        replacedParts: [] 
-    };
-    
-    const gasolineCar = document.getElementById('gasolineCar');
-    const electricCar = document.getElementById('electricCar');
-    
-    electricCar.style.opacity = '0';
-    setTimeout(() => {
-        electricCar.style.display = 'none';
-        gasolineCar.style.display = 'block';
-        setTimeout(() => gasolineCar.style.opacity = '1', 50);
-    }, 500);
+let speedInterval;
+function startSpeedSimulation() {
+    speedInterval = setInterval(() => {
+        if (!carState.isPowerOn) return;
+        let target = { sport: 120, normal: 80, eco: 60 }[carState.driveMode];
+        if (carState.speed < target) carState.speed += 2;
+        else carState.speed = target + Math.floor(Math.random() * 5 - 2);
+        document.getElementById('main-speed').textContent = carState.speed;
+    }, 100);
+}
 
-    hideAllParts();
+function stopSpeedSimulation() {
+    clearInterval(speedInterval);
+    let stopInt = setInterval(() => {
+        if (carState.speed > 0) {
+            carState.speed -= 5;
+            document.getElementById('main-speed').textContent = Math.max(0, carState.speed);
+        } else clearInterval(stopInt);
+    }, 50);
+}
+
+function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+    document.getElementById(tab + '-tab').classList.add('active');
+}
+
+function locateCar() { alert('موقع السيارة: الرياض، المملكة العربية السعودية'); }
+function openChargingScheduler() { 
+    const m = document.getElementById('charging-scheduler');
+    m.style.display = m.style.display === 'none' ? 'block' : 'none';
+}
+function saveSchedule() { alert('تم حفظ جدول الشحن'); document.getElementById('charging-scheduler').style.display = 'none'; }
+
+function setDriveMode(mode) {
+    carState.driveMode = mode;
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    event.currentTarget.classList.add('active');
     updateDashboard();
 }
 
-function toggleInfo() {
-    const message = 'محاكي التحول للكهرباء:\n\n1. قارن بين تكاليف البنزين والكهرباء شهرياً.\n2. اسحب القطع أو انقر عليها مرتين لتحويل السيارة.\n3. شاهد كيف تتحول البيئة من ملوثة إلى نقية.\n4. لاحظ التوفير المالي السنوي الضخم!';
-    
-    // استخدام alert أو modal بسيط
-    if (typeof alert !== 'undefined') {
-        alert(message);
-    }
+function toggleEcoSave() {
+    carState.ecoSave = document.getElementById('eco-save-toggle').checked;
+    carState.ecoEfficiency = carState.ecoSave ? 1.25 : 1.0;
+    alert(carState.ecoSave ? 'تفعيل توفير الطاقة: زيادة المدى 25%' : 'إيقاف توفير الطاقة');
+    updateDashboard();
 }
 
-// ============================================
-// تهيئة الصفحة
-// ============================================
-
-document.addEventListener('DOMContentLoaded', () => {
-    updateDashboard();
-    
-    // منع السلوكيات الافتراضية على شاشات اللمس
-    document.addEventListener('touchmove', (e) => {
-        // السماح بالتمرير الطبيعي
-    }, { passive: true });
-});
-
-// ============================================
-// دعم الاستجابة للتغييرات في حجم النافذة
-// ============================================
-
-window.addEventListener('resize', () => {
-    // إعادة حساب مواضع القطع إذا لزم الأمر
-    if (carState.hasBattery || carState.hasMotor || carState.hasSolar) {
-        updateDashboard();
-    }
-});
+function resetCar() { location.reload(); }
+function toggleMenu() { alert('SolarShift v2.1\nنظام إدارة الطاقة الذكي'); }
