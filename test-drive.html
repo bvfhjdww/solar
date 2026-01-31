@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>اختبار القيادة - SolarShift</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: linear-gradient(to bottom, #87CEEB 0%, #98D8E8 50%, #808080 100%);
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        #gameCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .game-hud {
+            position: fixed;
+            top: 20px;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            padding: 0 20px;
+            pointer-events: none;
+        }
+
+        .hud-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .hud-panel {
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #00ff88;
+            border-radius: 12px;
+            padding: 12px 18px;
+            color: white;
+            font-family: 'Cairo', sans-serif;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0, 255, 136, 0.3);
+        }
+
+        .hud-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #00ff88;
+            display: block;
+            line-height: 1;
+        }
+
+        .hud-label {
+            font-size: 12px;
+            color: #aaa;
+            margin-top: 4px;
+            display: block;
+        }
+
+        .hud-warning {
+            border-color: #ff4444;
+        }
+
+        .hud-warning .hud-value {
+            color: #ff4444;
+        }
+
+        .controls-container {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .control-btn-game {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 3px solid #00ff88;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            font-size: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            user-select: none;
+            touch-action: manipulation;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0, 255, 136, 0.4);
+            transition: all 0.2s;
+        }
+
+        .control-btn-game:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 10px rgba(0, 255, 136, 0.6);
+        }
+
+        .accelerator-btn {
+            width: 100px;
+            height: 100px;
+            font-size: 40px;
+            border-color: #ffaa00;
+            box-shadow: 0 4px 20px rgba(255, 170, 0, 0.4);
+        }
+
+        .accelerator-btn:active {
+            box-shadow: 0 2px 10px rgba(255, 170, 0, 0.6);
+            background: rgba(255, 170, 0, 0.2);
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 101;
+            padding: 12px 24px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #00ff88;
+            border-radius: 8px;
+            color: white;
+            font-family: 'Cairo', sans-serif;
+            font-size: 16px;
+            cursor: pointer;
+            pointer-events: all;
+            backdrop-filter: blur(10px);
+        }
+
+        .game-over-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 200;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            color: white;
+            font-family: 'Cairo', sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .game-over-screen.active {
+            display: flex;
+        }
+
+        .game-over-title {
+            font-size: 48px;
+            font-weight: bold;
+            color: #00ff88;
+            margin-bottom: 30px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin: 30px 0;
+            max-width: 600px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #00ff88;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .stat-card-value {
+            font-size: 36px;
+            font-weight: bold;
+            color: #00ff88;
+        }
+
+        .stat-card-label {
+            font-size: 16px;
+            color: #aaa;
+            margin-top: 8px;
+        }
+
+        .restart-btn {
+            margin-top: 30px;
+            padding: 16px 48px;
+            background: #00ff88;
+            border: none;
+            border-radius: 8px;
+            color: black;
+            font-family: 'Cairo', sans-serif;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .pollution-indicator {
+            position: fixed;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .pollution-bar {
+            width: 40px;
+            height: 300px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #00ff88;
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pollution-fill {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, #ff4444, #ffaa00, #00ff88);
+            transition: height 0.3s;
+            border-radius: 18px;
+        }
+
+        .pollution-label {
+            text-align: center;
+            color: white;
+            font-size: 12px;
+            margin-top: 8px;
+            font-family: 'Cairo', sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+
+    <button class="back-btn" onclick="goBack()">← رجوع</button>
+
+    <div class="game-hud">
+        <div class="hud-top">
+            <div class="hud-panel">
+                <span class="hud-value" id="speedDisplay">0</span>
+                <span class="hud-label">KM/H</span>
+            </div>
+            <div class="hud-panel" id="fuelPanel">
+                <span class="hud-value" id="fuelDisplay">100%</span>
+                <span class="hud-label" id="fuelLabel">الوقود</span>
+            </div>
+            <div class="hud-panel">
+                <span class="hud-value" id="distanceDisplay">0</span>
+                <span class="hud-label">متر</span>
+            </div>
+            <div class="hud-panel">
+                <span class="hud-value" id="pollutionDisplay">0%</span>
+                <span class="hud-label">التلوث</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="pollution-indicator">
+        <div class="pollution-bar">
+            <div class="pollution-fill" id="pollutionFill"></div>
+        </div>
+        <div class="pollution-label">التلوث</div>
+    </div>
+
+    <div class="controls-container">
+        <button class="control-btn-game" id="leftBtn">←</button>
+        <button class="control-btn-game accelerator-btn" id="acceleratorBtn">⚡</button>
+        <button class="control-btn-game" id="rightBtn">→</button>
+    </div>
+
+
+    <div class="game-over-screen" id="gameOverScreen">
+        <div class="game-over-title">انتهى الاختبار!</div>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-card-value" id="finalDistance">0</div>
+                <div class="stat-card-label">المسافة (متر)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-value" id="finalMaxSpeed">0</div>
+                <div class="stat-card-label">أقصى سرعة (KM/H)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-value" id="finalPollution">0%</div>
+                <div class="stat-card-label">التلوث الكلي</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-value" id="finalFuel">0%</div>
+                <div class="stat-card-label" id="finalFuelLabel">الوقود المتبقي</div>
+            </div>
+        </div>
+        <button class="restart-btn" onclick="restartGame()">إعادة الاختبار</button>
+        <button class="restart-btn" onclick="goBack()" style="background: #666; margin-right: 20px;">العودة للرئيسية</button>
+    </div>
+
+    <script src="test-drive.js"></script>
+</body>
+</html>

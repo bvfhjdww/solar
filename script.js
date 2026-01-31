@@ -129,8 +129,24 @@ function updateDashboard() {
         currentPollution -= electricPartsEffect.motor.pollutionReduction;
         if (carState.hasBattery) currentRange += 50;
     }
+    
+    // منطق التلوث: يبقى 100% طالما لم يتم تركيب المحرك الكهربائي (الذي يحل محل محرك البنزين)
+    if (!carState.hasMotor) {
+        currentPollution = 100; 
+    } else {
+        // إذا ركب المحرك الكهربائي، يبدأ التلوث بالانخفاض
+        currentPollution = 100 - electricPartsEffect.motor.pollutionReduction;
+        
+        if (carState.hasBattery) {
+            currentPollution -= electricPartsEffect.battery.pollutionReduction;
+        }
+        
+        if (carState.hasSolar) {
+            currentPollution -= electricPartsEffect.solar.pollutionReduction;
+        }
+    }
+
     if (carState.hasSolar) {
-        currentPollution -= electricPartsEffect.solar.pollutionReduction;
         if (carState.hasBattery) {
             currentRange += electricPartsEffect.solar.rangeBoost;
             currentMonthlyCost = 0;
@@ -188,6 +204,17 @@ function updateEnvironment(pollution) {
 
     if (pollution < 100) gasCar.classList.add('clean');
     else gasCar.classList.remove('clean');
+
+    // إضافة تأثير الكربون للسيارة البنزين
+    const carContainer = document.querySelector('.car-container');
+    if (carContainer) {
+        // عرض الكربون دائماً في وضع البنزين (عندما لا تكون كهربائية)
+        if (!carState.hasBattery && !carState.hasMotor && !carState.hasSolar) {
+            carContainer.classList.add('gas-mode');
+        } else {
+            carContainer.classList.remove('gas-mode');
+        }
+    }
 
     if (carState.hasBattery && carState.hasMotor && carState.hasSolar) {
         gasCar.style.opacity = '0';
@@ -292,7 +319,20 @@ function resetCar() {
     location.reload(); 
 }
 
+
+
 function toggleMenu() { 
     playSound('click');
     alert('SolarShift v2.2\nنظام إدارة الطاقة الذكي'); 
+}
+
+// وظيفة بدء اختبار القيادة
+function startTestDrive() {
+    playSound('click');
+    
+    // تحديد نوع السيارة (بنزين أو كهرباء)
+    const isElectric = carState.hasBattery && carState.hasMotor && carState.hasSolar;
+    
+    // فتح صفحة الاختبار في نافذة جديدة أو نفس النافذة
+    window.location.href = `test-drive.html?electric=${isElectric}`;
 }
