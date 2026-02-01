@@ -1,8 +1,3 @@
-// ============================================
-// محاكي السيارات الشمسية - لوحة التحكم المتقدمة v2.2
-// النظام الصوتي والتفاعل المتقدم
-// ============================================
-
 let carState = {
     hasBattery: false,
     hasSolar: false,
@@ -236,8 +231,6 @@ function updateEnvironment(pollution) {
         ecoStatus.textContent = pollution <= 60 ? 'بيئة تتحسن تدريجياً' : 'بيئة ملوثة';
     }
 }
-
-// وظائف التحكم
 function toggleCarPower() {
     carState.isPowerOn = !carState.isPowerOn;
     const btn = document.getElementById('carPowerBtn');
@@ -336,3 +329,83 @@ function startTestDrive() {
     // فتح صفحة الاختبار في نافذة جديدة أو نفس النافذة
     window.location.href = `test-drive.html?electric=${isElectric}`;
 }
+
+// ============================================
+// جزيئات الكربون (تتبع السيارة) - من الإصدار القديم
+// ============================================
+
+function createCarbonParticles() {
+    // لا ينشئ كربون إذا كان التلوث صفر أو السيارة كهربائية بالكامل
+    if (carState.carbonLevel === 0 || (carState.hasBattery && carState.hasMotor && carState.hasSolar)) return;
+    
+    const carImage = document.querySelector('.car-image:not([style*="display: none"])');
+    if (!carImage) return;
+    
+    const rect = carImage.getBoundingClientRect();
+    // عدد الجزيئات يعتمد على مستوى الكربون
+    const particleCount = Math.ceil(carState.carbonLevel / 40);
+
+    for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'carbon-particle';
+        const dot = document.createElement('div');
+        dot.className = 'particle-dot';
+        
+        // موقع العادم (يمين الصورة خلف السيارة لأنها موجهة لليسار في النسخة الجديدة)
+        // في النسخة القديمة كان يسار، هنا سنعدله ليكون خلف السيارة (جهة اليمين)
+        const exhaustX = rect.right - (rect.width * 0.85); 
+        const exhaustY = rect.bottom - (rect.height * 0.35); 
+        
+        particle.style.left = exhaustX + 'px';
+        particle.style.top = exhaustY + 'px';
+        dot.style.setProperty('--drift', ((Math.random() - 0.5) * 60) + 'px');
+        
+        particle.appendChild(dot);
+        document.body.appendChild(particle);
+        setTimeout(() => { if (particle.parentNode) particle.remove(); }, 4000);
+    }
+}
+
+setInterval(createCarbonParticles, 200);
+
+// ============================================
+// وظائف إضافية
+// ============================================
+
+// نظام منع تكرار الأصوات
+let lastSoundTime = {};
+const SOUND_COOLDOWN = 500; // ملي ثانية
+
+
+function resetCar() {
+    carState = { hasBattery: false, hasSolar: false, hasMotor: false, parts: [], isMoving: true, carbonLevel: 100, replacedParts: [] };
+    
+    const gasolineCar = document.getElementById('gasolineCar');
+    const electricCar = document.getElementById('electricCar');
+    
+    if (electricCar) {
+        electricCar.style.opacity = '0';
+        setTimeout(() => {
+            electricCar.style.display = 'none';
+            if (gasolineCar) {
+                gasolineCar.style.display = 'block';
+                setTimeout(() => gasolineCar.style.opacity = '1', 50);
+            }
+        }, 500);
+    }
+
+    hideAllParts();
+    updateDashboard();
+}
+
+function startTest() {
+    // حفظ حالة السيارة الحالية للانتقال للعبة
+    const state = {
+        isElectric: carState.hasBattery && carState.hasMotor && carState.hasSolar,
+        pollution: carState.carbonLevel
+    };
+    localStorage.setItem('solarshift_car_state', JSON.stringify(state));
+    window.open('test-drive.html', '_blank');
+}
+
+document.addEventListener('DOMContentLoaded', updateDashboard);
