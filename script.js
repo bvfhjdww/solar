@@ -1,3 +1,15 @@
+// نظام الألواح الشمسية الأربعة
+const solarPanels = [
+    { id: 1, name: 'اللوح الأول', efficiency: 95, charge: 100, maxCharge: 100 },
+    { id: 2, name: 'اللوح الثاني', efficiency: 88, charge: 100, maxCharge: 100 },
+    { id: 3, name: 'اللوح الثالث', efficiency: 72, charge: 100, maxCharge: 100 },
+    { id: 4, name: 'اللوح الرابع', efficiency: 65, charge: 100, maxCharge: 100 }
+];
+
+let activePanelIndex = 0;
+let batteryMode = false;
+let simulationRunning = false;
+
 let carState = {
     hasBattery: false,
     hasSolar: false,
@@ -13,7 +25,9 @@ let carState = {
     driveMode: 'eco',
     ecoSave: false,
     ecoEfficiency: 1.0,
-    schedule: { start: '00:00', end: '06:00' }
+    schedule: { start: '00:00', end: '06:00' },
+    batteryCharge: 100,
+    batteryMaxCharge: 100
 };
 
 // إعداد النظام الصوتي
@@ -21,8 +35,8 @@ const sounds = {
     battery: new Audio('sounds/battery-install.wav'),
     motor: new Audio('sounds/motor-install.wav'),
     solar: new Audio('sounds/solar-install.wav'),
-    powerOn: new Audio('sounds/motor-install.wav'), // استخدام صوت المحرك للتشغيل مؤقتاً
-    click: new Audio('sounds/battery-install.wav') // صوت نقرة خفيفة
+    powerOn: new Audio('sounds/motor-install.wav'),
+    click: new Audio('sounds/battery-install.wav')
 };
 
 // وظيفة تشغيل الصوت مع معالجة أخطاء المتصفح (Autoplay policy)
@@ -54,7 +68,150 @@ const replacedPartsData = {
     exhaust_system: { name: 'نظام العادم', desc: 'تمت إزالته بالكامل - صفر انبعاثات كربونية', image: 'images/exhaust_replaced.png' }
 };
 
+// ========================================
+// وظائف نظام الألواح الشمسية
+// ========================================
+
+function updateSolarPanelsUI() {
+    const panelsContainer = document.getElementById('solar-panels-container');
+    if (!panelsContainer) return;
+    
+    panelsContainer.innerHTML = '';
+    
+    solarPanels.forEach((panel, index) => {
+        const panelCard = document.createElement('div');
+        panelCard.className = `solar-panel-card ${index === activePanelIndex ? 'active' : ''} ${panel.charge === 0 ? 'depleted' : ''}`;
+        
+        const efficiencyColor = panel.efficiency >= 80 ? '#10b981' : panel.efficiency >= 60 ? '#3b82f6' : panel.efficiency >= 40 ? '#f59e0b' : '#ef4444';
+        
+        panelCard.innerHTML = `
+            <div class="panel-header">
+                <div class="panel-name">${panel.name}</div>
+                ${index === activePanelIndex ? '<span class="active-badge">نشط</span>' : ''}
+            </div>
+            <div class="panel-charge-circle">
+                <svg viewBox="0 0 120 120" class="charge-svg">
+                    <circle cx="60" cy="60" r="50" fill="none" stroke="#333" stroke-width="8"/>
+                    <circle cx="60" cy="60" r="50" fill="none" stroke="${efficiencyColor}" stroke-width="8" 
+                            stroke-dasharray="${(panel.charge / 100) * 314} 314" stroke-linecap="round" class="charge-progress"/>
+                </svg>
+                <div class="charge-text">
+                    <div class="charge-value">${panel.charge}%</div>
+                    <div class="charge-label">الشحن</div>
+                </div>
+            </div>
+            <div class="panel-efficiency">
+                <div class="efficiency-label">الكفاءة</div>
+                <div class="efficiency-bar">
+                    <div class="efficiency-fill" style="width: ${panel.efficiency}%; background-color: ${efficiencyColor};"></div>
+                </div>
+                <div class="efficiency-value">${panel.efficiency}%</div>
+            </div>
+            <div class="panel-status">
+                ${panel.charge === 0 ? '<span class="status-depleted">✓ تم استنزاف الشحن</span>' : '<span class="status-active">يعمل بكفاءة</span>'}
+            </div>
+        `;
+        
+        panelsContainer.appendChild(panelCard);
+    });
+}
+
+function updateBatteryUI() {
+    const batteryContainer = document.getElementById('battery-container');
+    if (!batteryContainer) return;
+    
+    const batteryColor = carState.batteryCharge >= 70 ? '#10b981' : carState.batteryCharge >= 40 ? '#3b82f6' : carState.batteryCharge >= 20 ? '#f59e0b' : '#ef4444';
+    
+    batteryContainer.innerHTML = `
+        <div class="battery-card ${batteryMode ? 'active' : ''}">
+            <div class="battery-header">
+                <div class="battery-name">البطارية الاحتياطية</div>
+                ${batteryMode ? '<span class="active-badge">نشطة</span>' : ''}
+            </div>
+            <div class="battery-charge-circle">
+                <svg viewBox="0 0 120 120" class="charge-svg">
+                    <circle cx="60" cy="60" r="50" fill="none" stroke="#333" stroke-width="8"/>
+                    <circle cx="60" cy="60" r="50" fill="none" stroke="${batteryColor}" stroke-width="8" 
+                            stroke-dasharray="${(carState.batteryCharge / 100) * 314} 314" stroke-linecap="round" class="charge-progress"/>
+                </svg>
+                <div class="charge-text">
+                    <div class="charge-value">${carState.batteryCharge}%</div>
+                    <div class="charge-label">الشحن</div>
+                </div>
+            </div>
+            <div class="battery-status">
+                ${batteryMode ? '<span class="status-active">البطارية توفر الطاقة الآن</span>' : '<span class="status-standby">في وضع الانتظار</span>'}
+            </div>
+        </div>
+    `;
+}
+
+function switchToNextPanel() {
+    if (activePanelIndex < solarPanels.length - 1) {
+        activePanelIndex++;
+        console.log(`تم التبديل إلى ${solarPanels[activePanelIndex].name}`);
+        updateSolarPanelsUI();
+    } else {
+        // جميع الألواح انتهت، انتقل للبطارية
+        batteryMode = true;
+        console.log('تم تفعيل البطارية الاحتياطية');
+        updateBatteryUI();
+    }
+}
+
+function startPanelSimulation() {
+    if (simulationRunning) return;
+    simulationRunning = true;
+    
+    const simulationInterval = setInterval(() => {
+        if (!simulationRunning) {
+            clearInterval(simulationInterval);
+            return;
+        }
+        
+        if (!batteryMode) {
+            // تقليل شحن اللوح الحالي
+            solarPanels[activePanelIndex].charge -= 2;
+            
+            if (solarPanels[activePanelIndex].charge <= 0) {
+                solarPanels[activePanelIndex].charge = 0;
+                switchToNextPanel();
+            }
+        } else {
+            // تقليل شحن البطارية
+            carState.batteryCharge -= 1;
+            if (carState.batteryCharge <= 0) {
+                carState.batteryCharge = 0;
+                stopPanelSimulation();
+                alert('⚠️ تم استنزاف جميع مصادر الطاقة!');
+            }
+        }
+        
+        updateSolarPanelsUI();
+        updateBatteryUI();
+    }, 500);
+}
+
+function stopPanelSimulation() {
+    simulationRunning = false;
+}
+
+function resetPanelSystem() {
+    solarPanels.forEach(panel => {
+        panel.charge = 100;
+    });
+    activePanelIndex = 0;
+    batteryMode = false;
+    carState.batteryCharge = 100;
+    simulationRunning = false;
+    updateSolarPanelsUI();
+    updateBatteryUI();
+}
+
+// ========================================
 // وظائف السحب والإفلات والنقر
+// ========================================
+
 document.querySelectorAll('.part-card').forEach(part => {
     part.addEventListener('dragstart', (e) => {
         e.dataTransfer.setData('text/plain', part.dataset.part);
@@ -76,12 +233,14 @@ document.querySelectorAll('.part-card').forEach(part => {
 });
 
 const dropZone = document.getElementById('dropZone');
-dropZone.addEventListener('dragover', (e) => e.preventDefault());
-dropZone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    const partType = e.dataTransfer.getData('text/plain');
-    if (partType) addPartToCar(partType);
-});
+if (dropZone) {
+    dropZone.addEventListener('dragover', (e) => e.preventDefault());
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const partType = e.dataTransfer.getData('text/plain');
+        if (partType) addPartToCar(partType);
+    });
+}
 
 function addPartToCar(partType) {
     if (partType === 'battery' && !carState.hasBattery) {
@@ -125,11 +284,9 @@ function updateDashboard() {
         if (carState.hasBattery) currentRange += 50;
     }
     
-    // منطق التلوث: يبقى 100% طالما لم يتم تركيب المحرك الكهربائي (الذي يحل محل محرك البنزين)
     if (!carState.hasMotor) {
         currentPollution = 100; 
     } else {
-        // إذا ركب المحرك الكهربائي، يبدأ التلوث بالانخفاض
         currentPollution = 100 - electricPartsEffect.motor.pollutionReduction;
         
         if (carState.hasBattery) {
@@ -148,14 +305,12 @@ function updateDashboard() {
         }
     }
 
-    // تطبيق الأوضاع والخصائص
     if (carState.driveMode === 'sport') currentRange *= 0.7;
     else if (carState.driveMode === 'eco') currentRange *= 1.2;
     currentRange *= carState.ecoEfficiency;
 
     currentPollution = Math.max(0, currentPollution);
     
-    // تحديث الواجهة
     document.getElementById('elec-battery-cap').textContent = currentBattery + ' kWh';
     document.getElementById('elec-monthly-cost').textContent = Math.round(currentMonthlyCost) + ' SAR';
     document.getElementById('elec-range').textContent = Math.round(currentRange) + ' KM';
@@ -200,10 +355,8 @@ function updateEnvironment(pollution) {
     if (pollution < 100) gasCar.classList.add('clean');
     else gasCar.classList.remove('clean');
 
-    // إضافة تأثير الكربون للسيارة البنزين
     const carContainer = document.querySelector('.car-container');
     if (carContainer) {
-        // عرض الكربون دائماً في وضع البنزين (عندما لا تكون كهربائية)
         if (!carState.hasBattery && !carState.hasMotor && !carState.hasSolar) {
             carContainer.classList.add('gas-mode');
         } else {
@@ -231,6 +384,7 @@ function updateEnvironment(pollution) {
         ecoStatus.textContent = pollution <= 60 ? 'بيئة تتحسن تدريجياً' : 'بيئة ملوثة';
     }
 }
+
 function toggleCarPower() {
     carState.isPowerOn = !carState.isPowerOn;
     const btn = document.getElementById('carPowerBtn');
@@ -312,37 +466,24 @@ function resetCar() {
     location.reload(); 
 }
 
-
-
 function toggleMenu() { 
     playSound('click');
     alert('SolarShift v2.2\nنظام إدارة الطاقة الذكي'); 
 }
 
-// وظيفة بدء اختبار القيادة
 function startTestDrive() {
     playSound('click');
-    
-    // تحديد نوع السيارة (بنزين أو كهرباء)
     const isElectric = carState.hasBattery && carState.hasMotor && carState.hasSolar;
-    
-    // فتح صفحة الاختبار في نافذة جديدة أو نفس النافذة
     window.location.href = `test-drive.html?electric=${isElectric}`;
 }
 
-// ============================================
-// جزيئات الكربون (تتبع السيارة) - من الإصدار القديم
-// ============================================
-
 function createCarbonParticles() {
-    // لا ينشئ كربون إذا كان التلوث صفر أو السيارة كهربائية بالكامل
     if (carState.carbonLevel === 0 || (carState.hasBattery && carState.hasMotor && carState.hasSolar)) return;
     
     const carImage = document.querySelector('.car-image:not([style*="display: none"])');
     if (!carImage) return;
     
     const rect = carImage.getBoundingClientRect();
-    // عدد الجزيئات يعتمد على مستوى الكربون
     const particleCount = Math.ceil(carState.carbonLevel / 40);
 
     for (let i = 0; i < particleCount; i++) {
@@ -351,8 +492,6 @@ function createCarbonParticles() {
         const dot = document.createElement('div');
         dot.className = 'particle-dot';
         
-        // موقع العادم (يمين الصورة خلف السيارة لأنها موجهة لليسار في النسخة الجديدة)
-        // في النسخة القديمة كان يسار، هنا سنعدله ليكون خلف السيارة (جهة اليمين)
         const exhaustX = rect.right - (rect.width * 0.85); 
         const exhaustY = rect.bottom - (rect.height * 0.35); 
         
@@ -368,38 +507,13 @@ function createCarbonParticles() {
 
 setInterval(createCarbonParticles, 200);
 
-// ============================================
-// وظائف إضافية
-// ============================================
-
-// نظام منع تكرار الأصوات
-let lastSoundTime = {};
-const SOUND_COOLDOWN = 500; // ملي ثانية
-
-
-function resetCar() {
-    carState = { hasBattery: false, hasSolar: false, hasMotor: false, parts: [], isMoving: true, carbonLevel: 100, replacedParts: [] };
-    
-    const gasolineCar = document.getElementById('gasolineCar');
-    const electricCar = document.getElementById('electricCar');
-    
-    if (electricCar) {
-        electricCar.style.opacity = '0';
-        setTimeout(() => {
-            electricCar.style.display = 'none';
-            if (gasolineCar) {
-                gasolineCar.style.display = 'block';
-                setTimeout(() => gasolineCar.style.opacity = '1', 50);
-            }
-        }, 500);
-    }
-
-    hideAllParts();
-    updateDashboard();
+function hideAllParts() {
+    document.getElementById('batteryPack').style.display = 'none';
+    document.getElementById('electricMotor').style.display = 'none';
+    document.getElementById('solarRoof').style.display = 'none';
 }
 
 function startTest() {
-    // حفظ حالة السيارة الحالية للانتقال للعبة
     const state = {
         isElectric: carState.hasBattery && carState.hasMotor && carState.hasSolar,
         pollution: carState.carbonLevel
@@ -408,4 +522,8 @@ function startTest() {
     window.open('test-drive.html', '_blank');
 }
 
-document.addEventListener('DOMContentLoaded', updateDashboard);
+document.addEventListener('DOMContentLoaded', () => {
+    updateDashboard();
+    updateSolarPanelsUI();
+    updateBatteryUI();
+});
