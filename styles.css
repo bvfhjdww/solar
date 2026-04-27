@@ -1289,6 +1289,36 @@ body {
     text-align: right;
 }
 
+.panel-data-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    border: 1px solid rgba(100, 200, 150, 0.2);
+}
+
+.panel-data-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.data-label {
+    font-size: 0.7rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.data-value {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #e8e8e8;
+}
+
 .panel-status {
     text-align: center;
     padding: 0.75rem;
